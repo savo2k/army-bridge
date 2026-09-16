@@ -17,6 +17,7 @@
   .lvl{font-size:18px;letter-spacing:.04em}
   .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
   .chip{font-size:13px;background:rgba(20,28,45,.55);border-radius:8px;padding:4px 8px;letter-spacing:.03em}
+  .chip.score{background:rgba(255,201,40,.9);color:#1d2433;text-shadow:none;font-variant-numeric:tabular-nums}
   .chip.hero{background:rgba(45,107,255,.8)}
   .progress{height:8px;border-radius:8px;background:rgba(20,28,45,.45);overflow:hidden}
   .progress i{display:block;height:100%;width:0;background:var(--gold);border-radius:8px}
@@ -50,6 +51,19 @@
   .menuBtn{pointer-events:auto;font-family:var(--font);font-size:14px;color:#fff;background:rgba(20,28,45,.55);border:0;border-radius:8px;padding:6px 10px;cursor:pointer}
   #menu{overflow-y:auto;place-items:start center}
   #menu .panel{padding-block:calc(env(safe-area-inset-top,0px) + 24px) 24px;margin:auto 0}
+  #recordsScreen{background:rgba(15,20,32,.95);z-index:30}
+  .runscore{font-family:var(--font);font-size:20px;color:var(--gold);min-height:1em}
+  .runscore b{display:block;font-weight:400;font-size:15px;color:#fff;margin-top:4px}
+  .linkBtn{font-family:var(--font);font-size:16px;color:#fff;background:rgba(20,28,45,.6);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:8px 18px;cursor:pointer}
+  .panel h1.small{font-size:clamp(34px,9vw,48px)}
+  .records{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column;gap:6px;counter-reset:rec}
+  .records li{counter-increment:rec;display:grid;grid-template-columns:2em 1fr auto;gap:10px;align-items:center;background:rgba(20,28,45,.6);border-radius:10px;padding:8px 12px;text-align:left}
+  .records li::before{content:counter(rec);font-size:18px;color:var(--gold)}
+  .records li:first-child{border:2px solid var(--gold)}
+  .records .pts{font-size:20px;font-variant-numeric:tabular-nums}
+  .records small{display:block;font-family:system-ui,sans-serif;font-size:12px;color:#b8c2d6}
+  .records .empty{display:block;text-align:center;font-family:system-ui,sans-serif;color:#b8c2d6}
+  .records .empty::before{content:none}
   @media (prefers-reduced-motion: reduce){.pop{transition:opacity .6s}}
 </style>
 
@@ -58,7 +72,7 @@
 <div class="hud">
   <div class="hud-row">
     <div class="hud-row"><button class="menuBtn" id="toMenu" aria-label="В меню">☰ МЕНЮ</button><button class="menuBtn" id="muteBtn" aria-label="Звук">🔊</button><div class="lvl" id="lvl">УРОВЕНЬ 1</div></div>
-    <div class="chips"><span class="chip" id="gunChip">Пистолет</span><span class="chip hero" id="heroChip" hidden>Мех</span></div>
+    <div class="chips"><span class="chip score" id="scoreChip">0</span><span class="chip" id="gunChip">Пистолет</span><span class="chip hero" id="heroChip" hidden>Мех</span></div>
   </div>
   <div class="progress" id="progress"><i id="progFill"></i></div>
   <div class="bossbar" id="bossbar" hidden>
@@ -75,13 +89,22 @@
     <div class="group"><div class="glabel">Враги</div><div class="seg" id="optFoe"></div></div>
     <p id="menuLevel">Уровень 1</p>
     <button class="btn" id="playBtn">ИГРАТЬ</button>
+    <button class="linkBtn" id="recordsBtn">🏆 Рекорды</button>
     <div class="legend"><span>веди пальцем ←→</span><span>синие +1 — собирай</span><span>жёлтые +N — расстреляй</span><span>карточки: стреляй до нуля</span><span>ворота + × / − ÷</span></div>
+  </div>
+</div>
+<div class="overlay" id="recordsScreen" hidden>
+  <div class="panel">
+    <h1 class="small">Рекорды</h1>
+    <ol class="records" id="recordsList"></ol>
+    <button class="btn" id="recordsClose">НАЗАД</button>
   </div>
 </div>
 <div class="overlay" id="endScreen" hidden>
   <div class="panel">
     <h1 id="endTitle">ПОБЕДА!</h1>
     <div class="big" id="endText">Уровень 1 пройден</div>
+    <div class="runscore" id="endScore"></div>
     <button class="btn" id="endBtn">ДАЛЬШЕ</button>
   </div>
 </div>
@@ -89,44 +112,44 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script type="text/plain" id="glb-rifleman" data-src="assets/glb-rifleman.glb?v=202609162258"></script>
-<script type="text/plain" id="glb-mech" data-src="assets/glb-mech.glb?v=202609162258"></script>
-<script type="text/plain" id="tex-mech-red" data-src="assets/tex-mech-red.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-deck-jungle" data-src="assets/tex-deck-jungle.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-deck-desert" data-src="assets/tex-deck-desert.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-deck-snow" data-src="assets/tex-deck-snow.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-deck-volcano" data-src="assets/tex-deck-volcano.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-wall-jungle" data-src="assets/tex-wall-jungle.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-wall-desert" data-src="assets/tex-wall-desert.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-wall-snow" data-src="assets/tex-wall-snow.jpg?v=202609162258"></script>
-<script type="text/plain" id="tex-wall-volcano" data-src="assets/tex-wall-volcano.jpg?v=202609162258"></script>
-<script type="text/plain" id="img-bg-jungle" data-src="assets/img-bg-jungle.jpg?v=202609162258"></script>
-<script type="text/plain" id="img-bg-desert" data-src="assets/img-bg-desert.jpg?v=202609162258"></script>
-<script type="text/plain" id="img-bg-snow" data-src="assets/img-bg-snow.jpg?v=202609162258"></script>
-<script type="text/plain" id="img-bg-volcano" data-src="assets/img-bg-volcano.jpg?v=202609162258"></script>
-<script type="text/plain" id="glb-shield" data-src="assets/glb-shield.glb?v=202609162258"></script>
-<script type="text/plain" id="glb-zombie" data-src="assets/glb-zombie.glb?v=202609162258"></script>
-<script type="text/plain" id="tex-mech-green" data-src="assets/tex-mech-green.jpg?v=202609162258"></script>
-<script type="text/plain" id="sfx-boom" data-src="assets/sfx-boom.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-card_break" data-src="assets/sfx-card_break.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-coin" data-src="assets/sfx-coin.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-crash" data-src="assets/sfx-crash.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-gate_bad" data-src="assets/sfx-gate_bad.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-gate_good" data-src="assets/sfx-gate_good.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-hit" data-src="assets/sfx-hit.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-lose" data-src="assets/sfx-lose.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-mech" data-src="assets/sfx-mech.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-melee" data-src="assets/sfx-melee.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-pickup" data-src="assets/sfx-pickup.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-shot" data-src="assets/sfx-shot.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-shot_heavy" data-src="assets/sfx-shot_heavy.mp3?v=202609162258"></script>
-<script type="text/plain" id="sfx-win" data-src="assets/sfx-win.mp3?v=202609162258"></script>
-<script type="text/plain" id="music-main" data-src="assets/music-main.mp3?v=202609162258"></script>
-<script type="text/plain" id="prop-Bush_Common" data-src="assets/prop-Bush_Common.glb?v=202609162258"></script>
-<script type="text/plain" id="prop-Fern_1" data-src="assets/prop-Fern_1.glb?v=202609162258"></script>
-<script type="text/plain" id="prop-Rock_Medium_1" data-src="assets/prop-Rock_Medium_1.glb?v=202609162258"></script>
-<script type="text/plain" id="prop-Rock_Medium_2" data-src="assets/prop-Rock_Medium_2.glb?v=202609162258"></script>
-<script type="text/plain" id="prop-Rock_Medium_3" data-src="assets/prop-Rock_Medium_3.glb?v=202609162258"></script>
+<script type="text/plain" id="glb-rifleman" data-src="assets/glb-rifleman.glb?v=202609162310"></script>
+<script type="text/plain" id="glb-mech" data-src="assets/glb-mech.glb?v=202609162310"></script>
+<script type="text/plain" id="tex-mech-red" data-src="assets/tex-mech-red.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-deck-jungle" data-src="assets/tex-deck-jungle.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-deck-desert" data-src="assets/tex-deck-desert.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-deck-snow" data-src="assets/tex-deck-snow.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-deck-volcano" data-src="assets/tex-deck-volcano.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-wall-jungle" data-src="assets/tex-wall-jungle.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-wall-desert" data-src="assets/tex-wall-desert.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-wall-snow" data-src="assets/tex-wall-snow.jpg?v=202609162310"></script>
+<script type="text/plain" id="tex-wall-volcano" data-src="assets/tex-wall-volcano.jpg?v=202609162310"></script>
+<script type="text/plain" id="img-bg-jungle" data-src="assets/img-bg-jungle.jpg?v=202609162310"></script>
+<script type="text/plain" id="img-bg-desert" data-src="assets/img-bg-desert.jpg?v=202609162310"></script>
+<script type="text/plain" id="img-bg-snow" data-src="assets/img-bg-snow.jpg?v=202609162310"></script>
+<script type="text/plain" id="img-bg-volcano" data-src="assets/img-bg-volcano.jpg?v=202609162310"></script>
+<script type="text/plain" id="glb-shield" data-src="assets/glb-shield.glb?v=202609162310"></script>
+<script type="text/plain" id="glb-zombie" data-src="assets/glb-zombie.glb?v=202609162310"></script>
+<script type="text/plain" id="tex-mech-green" data-src="assets/tex-mech-green.jpg?v=202609162310"></script>
+<script type="text/plain" id="sfx-boom" data-src="assets/sfx-boom.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-card_break" data-src="assets/sfx-card_break.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-coin" data-src="assets/sfx-coin.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-crash" data-src="assets/sfx-crash.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-gate_bad" data-src="assets/sfx-gate_bad.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-gate_good" data-src="assets/sfx-gate_good.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-hit" data-src="assets/sfx-hit.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-lose" data-src="assets/sfx-lose.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-mech" data-src="assets/sfx-mech.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-melee" data-src="assets/sfx-melee.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-pickup" data-src="assets/sfx-pickup.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-shot" data-src="assets/sfx-shot.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-shot_heavy" data-src="assets/sfx-shot_heavy.mp3?v=202609162310"></script>
+<script type="text/plain" id="sfx-win" data-src="assets/sfx-win.mp3?v=202609162310"></script>
+<script type="text/plain" id="music-main" data-src="assets/music-main.mp3?v=202609162310"></script>
+<script type="text/plain" id="prop-Bush_Common" data-src="assets/prop-Bush_Common.glb?v=202609162310"></script>
+<script type="text/plain" id="prop-Fern_1" data-src="assets/prop-Fern_1.glb?v=202609162310"></script>
+<script type="text/plain" id="prop-Rock_Medium_1" data-src="assets/prop-Rock_Medium_1.glb?v=202609162310"></script>
+<script type="text/plain" id="prop-Rock_Medium_2" data-src="assets/prop-Rock_Medium_2.glb?v=202609162310"></script>
+<script type="text/plain" id="prop-Rock_Medium_3" data-src="assets/prop-Rock_Medium_3.glb?v=202609162310"></script>
 <script>
 (() => {
 const ROAD_W = 10, HALF = ROAD_W / 2, LANE = 3.3, SPEED = 8, MAXP = 260, MAXE = 600, MAXB = 700;
@@ -429,6 +452,9 @@ function placeScenery(len, r) {
 let level = 1;
 try { level = Math.max(1, parseInt(localStorage.getItem('armyBridgeLevel')) || 1); } catch (e) {}
 let fallAcc = 0, gate_fall = 0;
+// a run lasts from the first level played until the squad is wiped out (or the player leaves to the menu)
+const run = { score: 0, levels: 0, startLevel: 1 };
+function addScore(v) { if (state === 'run') { run.score += v; $('scoreChip').textContent = run.score; } }
 let state = 'menu', t = 0, shake = 0, emitAcc = 0, heroEmit = 0, heroIntro = 0, camPull = 0;
 const player = { x: 0, tx: 0, z: 0, count: 10, px: new Float32Array(MAXP), pz: new Float32Array(MAXP), shown: 0, gun: 0, hero: 0, heroX: 0 };
 let levelGroup = null, gates = [], cards = [], hordes = [], pickups = [], boss = null, fx = [], levelLen = 1;
@@ -584,15 +610,21 @@ const music = (() => {
     el.preservesPitch = el.mozPreservesPitch = el.webkitPreservesPitch = false;
     return el;
   }
+  let stepT = 0;
   return {
-    start() { if (sfx.muted || !ensure()) return; el.playbackRate = 0.8; el.volume = 0.5; el.play().catch(() => {}); },
+    start() { if (sfx.muted || !ensure()) return; if (!el.played.length) el.playbackRate = 0.8; el.volume = 0.5; el.play().catch(() => {}); },
     stop() { if (el) el.pause(); },
     // plain <audio>, no WebAudio routing (that made playback choppy on iPhone);
-    // tempo switches in one step — gliding playbackRate crackled on phones
+    // tempo moves in a few coarse steps (~1.2 s): a per-frame glide crackled on phones
     tick(dt, mode) {
       if (!el || el.paused) return;
       const wantRate = mode === 'run' ? 1 : 0.8, wantVol = mode === 'run' ? 0.7 : mode === 'menu' ? 0.55 : 0.3;
-      if (el.playbackRate !== wantRate) el.playbackRate = wantRate;
+      stepT -= dt;
+      if (Math.abs(el.playbackRate - wantRate) > 0.001 && stepT <= 0) {
+        stepT = 0.2;
+        const next = el.playbackRate + Math.sign(wantRate - el.playbackRate) * 0.034;
+        el.playbackRate = Math.abs(next - wantRate) < 0.02 ? wantRate : next;
+      }
       if (Math.abs(el.volume - wantVol) > 0.01) el.volume = wantVol;
     },
   };
@@ -830,7 +862,7 @@ function update(dt) {
     if (front >= player.z - 0.2 && h.zBack < player.z + depth && Math.abs(h.x - player.x) < h.hw + hw - 0.1) {
       fighting = true;
       h.fightAcc += dt * (10 + Math.min(h.count, player.count) * 2.2);
-      while (h.fightAcc >= 1 && h.count > 0 && player.count > 0) { h.fightAcc -= 1; h.count--; lose(1); sfx.melee(); }
+      while (h.fightAcc >= 1 && h.count > 0 && player.count > 0) { h.fightAcc -= 1; h.count--; lose(1); sfx.melee(); addScore(5); }
       if (h.count <= 0) { h.dead = true; }
     }
   }
@@ -943,7 +975,7 @@ function update(dt) {
       else {
         p.hp -= b.dmg;
         p.bar.scale.x = Math.max(0.001, p.hp / p.maxHp);
-        if (p.hp <= 0) { p.gone = true; p.m.visible = false; gain(p.val); sfx.coin(); popup('+' + p.val, false, p.x, p.z, 1.5); burst(p.x, 1, p.z, 5, plateSide); }
+        if (p.hp <= 0) { p.gone = true; p.m.visible = false; gain(p.val); sfx.coin(); addScore(20); popup('+' + p.val, false, p.x, p.z, 1.5); burst(p.x, 1, p.z, 5, plateSide); }
       }
       break;
     }
@@ -958,7 +990,7 @@ function update(dt) {
       const front = hordeFront(h);
       if (b.z > front || oz < h.zBack) continue;
       hit = true; h.acc += b.dmg;
-      while (h.acc >= unitHp && h.count > 0) { h.acc -= unitHp; h.count--; sfx.hit(); }
+      while (h.acc >= unitHp && h.count > 0) { h.acc -= unitHp; h.count--; sfx.hit(); addScore(10); }
       if (h.count <= 0) h.dead = true;
       break;
     }
@@ -998,6 +1030,7 @@ function update(dt) {
 
 function breakCard(c) {
   sfx.reward();
+  addScore(c.reward.type === 'hero' ? 200 : 50);
   c.dead = true; c.mesh.visible = false; burst(c.x, 1.2, c.z, 14);
   const rw = c.reward;
   if (rw.type === 'weapon') {
@@ -1013,14 +1046,52 @@ function breakCard(c) {
 
 function finish(win) {
   win ? sfx.win() : sfx.lose();
+  if (win) { addScore(500 + level * 100 + player.count * 5); run.levels++; }
   state = win ? 'win' : 'lose';
+  const runScore = run.score, runLevels = run.levels;
+  const place = win ? 0 : saveRecord();
   setTimeout(() => {
     $('endTitle').textContent = win ? 'ПОБЕДА!' : 'РАЗБИТЫ';
     $('endText').textContent = win ? `Уровень ${level - 1} пройден · выжило ${player.count}` : 'Собирай +1, расстреливай карточки и выбирай полосу с умом';
     $('endBtn').textContent = win ? 'ДАЛЬШЕ' : 'ЕЩЁ РАЗ';
+    $('endScore').innerHTML = win ? `Очки забега: ${runScore}`
+      : `Забег: ${runScore} очков<b>${place === 1 ? '🏆 Новый рекорд!' : place ? place + '-е место в рекордах' : 'пройдено уровней: ' + runLevels}</b>`;
     $('endScreen').hidden = false;
   }, win ? 900 : 600);
   if (win) { level++; try { localStorage.setItem('armyBridgeLevel', level); } catch (e) {} }
+}
+
+// ---------- personal records: this device, plus Telegram cloud storage when opened inside Telegram ----------
+const REC_KEY = 'armyBridgeRecords';
+let records = [];
+try { records = JSON.parse(localStorage.getItem(REC_KEY) || '[]'); } catch (e) { records = []; }
+const tgCloud = () => window.Telegram && Telegram.WebApp && Telegram.WebApp.initData && Telegram.WebApp.CloudStorage;
+function mergeRecords(list) {
+  const seen = new Set(), all = [...records, ...list].filter(r => r && typeof r.score === 'number');
+  records = all.filter(r => { const k = r.score + '|' + r.date; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => b.score - a.score).slice(0, 10);
+}
+function persistRecords() {
+  try { localStorage.setItem(REC_KEY, JSON.stringify(records)); } catch (e) {}
+  try { const c = tgCloud(); if (c) c.setItem(REC_KEY, JSON.stringify(records)); } catch (e) {}
+}
+try { const c = tgCloud(); if (c) c.getItem(REC_KEY, (err, v) => { if (!err && v) { try { mergeRecords(JSON.parse(v)); } catch (e) {} } }); } catch (e) {}
+// returns the 1-based place of this run in the top 10, or 0
+function saveRecord() {
+  if (run.score <= 0) return 0;
+  const entry = { score: run.score, levels: run.levels, from: run.startLevel, to: level, env: settings.env, foe: settings.foe, diff: settings.diff, date: Date.now() };
+  mergeRecords([entry]); persistRecords();
+  run.score = 0; run.levels = 0; $('scoreChip').textContent = '0';
+  return records.indexOf(entry) + 1;
+}
+function showRecords() {
+  const list = $('recordsList');
+  list.innerHTML = records.length ? records.map(r => {
+    const d = new Date(r.date), when = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    const where = `${DIFFS[r.diff] ? DIFFS[r.diff].name : ''} · ${ENVS[r.env] ? ENVS[r.env].name : ''} · ${FOES[r.foe] ? FOES[r.foe].name : ''}`;
+    return `<li><span>ур. ${r.from}–${r.to}<small>${where} · ${when}</small></span><span class="pts">${r.score}</span></li>`;
+  }).join('') : '<li class="empty">Пока пусто — сыграй первый забег</li>';
+  $('recordsScreen').hidden = false;
 }
 
 // ---------- render ----------
@@ -1141,12 +1212,15 @@ function buildMenu() {
   }
   $('menuLevel').textContent = 'Уровень ' + level;
 }
-$('playBtn').addEventListener('click', () => { $('menu').hidden = true; resetRun(); debugStart(); state = 'run'; });
-$('endBtn').addEventListener('click', () => { $('endScreen').hidden = true; resetRun(); state = 'run'; });
+$('playBtn').addEventListener('click', () => { $('menu').hidden = true; resetRun(); debugStart(); startRun(); state = 'run'; });
+$('endBtn').addEventListener('click', () => { const lost = state === 'lose'; $('endScreen').hidden = true; resetRun(); if (lost) startRun(); state = 'run'; });
+function startRun() { run.score = 0; run.levels = 0; run.startLevel = level; $('scoreChip').textContent = '0'; }
+$('recordsBtn').addEventListener('click', showRecords);
+$('recordsClose').addEventListener('click', () => { $('recordsScreen').hidden = true; });
 $('muteBtn').textContent = sfx.muted ? '🔇' : '🔊';
 $('muteBtn').addEventListener('click', () => { const m = sfx.toggle(); $('muteBtn').textContent = m ? '🔇' : '🔊'; m ? music.stop() : music.start(); });
 addEventListener('pointerdown', () => { sfx.unlock(); music.start(); });
-$('toMenu').addEventListener('click', () => { state = 'menu'; $('endScreen').hidden = true; $('menu').hidden = false; buildMenu(); resetRun(); });
+$('toMenu').addEventListener('click', () => { if (state === 'run' || state === 'win') saveRecord(); state = 'menu'; $('endScreen').hidden = true; $('menu').hidden = false; buildMenu(); resetRun(); });
 
 // ?hero=1 in the address gives the squad a mech from the start (for checking how it looks)
 function debugStart() {
