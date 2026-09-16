@@ -28,7 +28,7 @@
   .tag.blue{background:var(--blue)}
   .pop{position:fixed;left:0;top:0;font-family:var(--font);font-size:26px;color:var(--gold);pointer-events:none;white-space:nowrap;text-shadow:0 3px 0 rgba(0,0,0,.4),0 0 12px rgba(0,0,0,.25);transition:transform 1s ease-out,opacity 1s ease-in}
   .pop.bad{color:#ff5a4f}
-  .overlay{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:radial-gradient(ellipse at center,rgba(15,20,32,.35),rgba(15,20,32,.7))}
+  .overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:radial-gradient(ellipse at center,rgba(15,20,32,.35),rgba(15,20,32,.7))}
   .panel{font-family:var(--font);color:#fff;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center;max-width:380px;width:100%}
   .panel h1{margin:0;font-weight:400;font-size:clamp(40px,11vw,62px);line-height:.95;color:var(--gold);text-shadow:0 5px 0 #8a5a00,0 10px 24px rgba(0,0,0,.4);text-wrap:balance}
   .panel p{margin:0;font-family:system-ui,sans-serif;font-size:16px;line-height:1.45;color:#e8ecf5;text-wrap:balance}
@@ -122,6 +122,16 @@
 <script type="text/plain" id="sfx-shot_heavy" data-src="assets/sfx-shot_heavy.mp3"></script>
 <script type="text/plain" id="sfx-win" data-src="assets/sfx-win.mp3"></script>
 <script type="text/plain" id="music-main" data-src="assets/music-main.mp3"></script>
+<script type="text/plain" id="prop-CommonTree_3" data-src="assets/prop-CommonTree_3.glb"></script>
+<script type="text/plain" id="prop-CommonTree_5" data-src="assets/prop-CommonTree_5.glb"></script>
+<script type="text/plain" id="prop-Bush_Common" data-src="assets/prop-Bush_Common.glb"></script>
+<script type="text/plain" id="prop-Fern_1" data-src="assets/prop-Fern_1.glb"></script>
+<script type="text/plain" id="prop-DeadTree_3" data-src="assets/prop-DeadTree_3.glb"></script>
+<script type="text/plain" id="prop-Pine_3" data-src="assets/prop-Pine_3.glb"></script>
+<script type="text/plain" id="prop-Pine_5" data-src="assets/prop-Pine_5.glb"></script>
+<script type="text/plain" id="prop-Rock_Medium_1" data-src="assets/prop-Rock_Medium_1.glb"></script>
+<script type="text/plain" id="prop-Rock_Medium_2" data-src="assets/prop-Rock_Medium_2.glb"></script>
+<script type="text/plain" id="prop-Rock_Medium_3" data-src="assets/prop-Rock_Medium_3.glb"></script>
 <script>
 (() => {
 const ROAD_W = 10, HALF = ROAD_W / 2, LANE = 3.3, SPEED = 8, MAXP = 260, MAXE = 600, MAXB = 700;
@@ -156,7 +166,7 @@ function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcT
 // ---------- settings ----------
 const DIFFS = {
   easy:   { name: 'Лёгкая',  sub: 'разминка',      hp: 0.6, foes: 0.6, boss: 0.6, hit: 0.6, start: 10 },
-  normal: { name: 'Средняя', sub: 'честный бой', hp: 1,   foes: 1,   boss: 1,   hit: 1,   start: 0 },
+  normal: { name: 'Средняя', sub: 'честный бой', hp: 1.12, foes: 1.12, boss: 1.12, hit: 1.1, start: 0 },
   hard:   { name: 'Хардкор', sub: 'без пощады',    hp: 1.5, foes: 1.5, boss: 1.6, hit: 1.4, start: -4 },
 };
 const ENVS = {
@@ -244,22 +254,22 @@ function crowdMeshes(max, bodyColor, headColor) {
 }
 let [pBody, pHead] = crowdMeshes(MAXP, 0x2d6bff, 0x5b91ff);
 let [eBody, eHead] = crowdMeshes(MAXE, 0xd93434, 0xff6a5c);
-// the squad marches as a column no wider than one lane: it grows backwards, not sideways
-const PS = 0.5, MAXCOLS = 5;
-const crowdCols = n => Math.max(1, Math.min(MAXCOLS, Math.ceil(Math.sqrt(Math.min(Math.max(n, 1), MAXP) * 0.5))));
-const crowdHW = n => crowdCols(n) * PS / 2;
-const crowdDepth = n => Math.ceil(Math.min(Math.max(n, 1), MAXP) / crowdCols(n)) * PS;
+// the squad is a round blob (sunflower packing) that widens as it grows, so a big squad
+// spans lanes and can lose its edges over the side of the bridge
+const PS = 0.5, BLOB = 0.27, STRETCH = 1.15;
+const crowdR = n => BLOB * Math.sqrt(Math.min(Math.max(n, 1), MAXP)) + 0.25;
+const crowdHW = n => crowdR(n);
+const crowdDepth = n => crowdR(n) * 2 * STRETCH;
 function formSlot(i, n, out) {
-  const m = Math.min(n, MAXP), cols = crowdCols(n), row = Math.floor(i / cols), col = i % cols;
-  const inRow = Math.min(cols, m - row * cols);
-  out[0] = (col - (inRow - 1) / 2) * PS + (row % 2 ? 0.08 : -0.08);
-  out[1] = PS / 2 + row * PS;
+  const r = BLOB * Math.sqrt(i + 0.5), a = i * 2.39996;
+  out[0] = Math.cos(a) * r;
+  out[1] = (Math.sin(a) * r + crowdR(n)) * STRETCH;
   return out;
 }
 const slot = [0, 0];
 // our mech marches inside the column, about 12 rows behind the front (or at the tail of a short squad)
 const HERO_ROW = 12;
-const heroZ = n => PS / 2 + Math.min(HERO_ROW * PS, crowdDepth(n));
+const heroZ = n => PS / 2 + Math.min(HERO_ROW * PS, crowdDepth(n) * 0.7);
 const dummy = new THREE.Object3D();
 
 const bullets = new THREE.InstancedMesh(new THREE.SphereGeometry(0.09, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffd24a }), MAXB);
@@ -364,13 +374,65 @@ async function loadArt() {
     heroFig = artFigure(ART.mech);
     heroFig.grp.rotation.y = Math.PI; heroFig.grp.visible = false; scene.add(heroFig.grp);
   }
+  // CC0 scenery by Quaternius (Stylized Nature MegaKit), one instanced mesh per model part
+  ART.props = {};
+  for (const id of PROP_IDS) {
+    const g = await loadGLB('prop-' + id);
+    if (!g) continue;
+    g.scene.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(g.scene), h = box.max.y - box.min.y || 1;
+    const parts = [];
+    g.scene.traverse(o => {
+      if (!o.isMesh) return;
+      const geo = o.geometry.clone(); geo.applyMatrix4(o.matrixWorld);
+      geo.translate(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
+      geo.scale(1 / h, 1 / h, 1 / h);
+      parts.push({ geo, mat: o.material });
+    });
+    ART.props[id] = parts;
+  }
   ART.bg = {};
   for (const k in ENVS) { const el = document.getElementById('img-bg-' + k); if (el) ART.bg[k] = assetUrl(el); }
+}
+
+const PROP_IDS = ['CommonTree_3', 'CommonTree_5', 'Bush_Common', 'Fern_1', 'DeadTree_3', 'Pine_3', 'Pine_5', 'Rock_Medium_1', 'Rock_Medium_2', 'Rock_Medium_3'];
+// per environment: small things on the parapet, tall things rising from the valley below, and a tint
+const SCENERY = {
+  jungle:  { rail: ['Bush_Common', 'Fern_1', 'Rock_Medium_2'], tall: ['CommonTree_3', 'CommonTree_5'], tint: 0xffffff, rockTint: 0xd8d2c0 },
+  desert:  { rail: ['Rock_Medium_1', 'Rock_Medium_2', 'Rock_Medium_3'], tall: ['DeadTree_3', 'Rock_Medium_3'], tint: 0xe0b890, rockTint: 0xf0c890 },
+  snow:    { rail: ['Rock_Medium_1', 'Rock_Medium_3'], tall: ['Pine_3', 'Pine_5'], tint: 0xffffff, rockTint: 0xdfe8f2 },
+  volcano: { rail: ['Rock_Medium_2', 'Rock_Medium_3'], tall: ['DeadTree_3', 'Rock_Medium_1'], tint: 0x5a4640, rockTint: 0x4a403e },
+};
+function placeScenery(len, r) {
+  const S = SCENERY[settings.env];
+  if (!S || !ART.props || !Object.keys(ART.props).length) return false;
+  const spots = {}; // id -> list of [x, y, z, height, rotY]
+  const put = (id, x, y, z, hgt) => { if (ART.props[id]) (spots[id] = spots[id] || []).push([x, y, z, hgt, r() * Math.PI * 2]); };
+  for (let z = 30; z > -len + 40; z -= 2.5 + r() * 4) {
+    const side = r() < 0.5 ? -1 : 1;
+    if (r() < 0.55) put(S.rail[Math.floor(r() * S.rail.length)], side * (HALF + 0.4), 1.2, z, 0.6 + r() * 0.7);
+  }
+  for (const side of [-1, 1]) for (let z = 30; z > -len + 30; z -= 5 + r() * 5) {
+    const id = S.tall[Math.floor(r() * S.tall.length)], rock = id.startsWith('Rock');
+    put(id, side * (8 + r() * 10), rock ? -5 - r() * 3 : -9 - r() * 4, z, rock ? 5 + r() * 5 : 12 + r() * 7);
+  }
+  const d = new THREE.Object3D();
+  for (const id in spots) {
+    const tint = id.startsWith('Rock') ? S.rockTint : S.tint;
+    for (const part of ART.props[id]) {
+      const mat = part.mat.clone(); mat.color.multiply(new THREE.Color(tint));
+      const inst = new THREE.InstancedMesh(part.geo, mat, spots[id].length);
+      spots[id].forEach(([x, y, z, hgt, ry], i) => { d.position.set(x, y, z); d.rotation.set(0, ry, 0); d.scale.setScalar(hgt); d.updateMatrix(); inst.setMatrixAt(i, d.matrix); });
+      inst.frustumCulled = false; levelGroup.add(inst);
+    }
+  }
+  return true;
 }
 
 // ---------- state ----------
 let level = 1;
 try { level = Math.max(1, parseInt(localStorage.getItem('armyBridgeLevel')) || 1); } catch (e) {}
+let fallAcc = 0, gate_fall = 0;
 let state = 'menu', t = 0, shake = 0, emitAcc = 0, heroEmit = 0, heroIntro = 0, camPull = 0;
 const player = { x: 0, tx: 0, z: 0, count: 10, px: new Float32Array(MAXP), pz: new Float32Array(MAXP), shown: 0, gun: 0, hero: 0, heroX: 0 };
 let levelGroup = null, gates = [], cards = [], hordes = [], pickups = [], boss = null, fx = [], levelLen = 1;
@@ -703,7 +765,7 @@ function buildLevel(n) {
   const pillarMat = new THREE.MeshLambertMaterial({ color: E.rail });
   for (const s of [-1, 1]) { const rail = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.2, len), railMat); rail.position.set(s * (HALF + 0.4), 0.6, 40 - len / 2); levelGroup.add(rail); }
   const bushGeo = new THREE.IcosahedronGeometry(0.8, 0);
-  for (let zz = 30; zz > -len + 40; zz -= 9) {
+  if (!placeScenery(len, r)) for (let zz = 30; zz > -len + 40; zz -= 9) {
     const b = new THREE.Mesh(bushGeo, mossMat); b.position.set((r() < 0.5 ? -1 : 1) * (HALF + 0.6), 1.1, zz - r() * 6); b.scale.set(1, 0.7 + r() * 0.6, 1.2); levelGroup.add(b);
   }
   for (let zz = 20; zz > -len + 40; zz -= 34) for (const s of [-1, 1]) {
@@ -770,7 +832,8 @@ function lose(v) {
 function update(dt) {
   t += dt;
   const hw = crowdHW(player.count), depth = crowdDepth(player.count);
-  const lim = Math.max(0, HALF - hw - 0.2);
+  // a small squad can't fall; a big one can be steered until its edges hang over the side
+  const lim = Math.max(0, HALF - Math.min(hw, 1.2) - 0.2);
   player.tx = Math.max(-lim, Math.min(lim, player.tx + keyDir * 9 * dt));
   player.x += (player.tx - player.x) * Math.min(1, dt * 10);
   player.heroX += (player.x - player.heroX) * Math.min(1, dt * 4);
@@ -842,6 +905,22 @@ function update(dt) {
     c.hp -= dead * RAM;
     lose(dead); popup('−' + dead, true, c.x, c.z); sfx.crash();
     c.dead = true; c.mesh.visible = false; burst(c.x, 1.2, c.z, 12); shake = 0.4;
+  }
+
+  // soldiers pushed past the parapet fall off the bridge
+  {
+    const shown = Math.min(player.count, MAXP);
+    let over = 0;
+    for (let i = 0; i < shown; i++) if (Math.abs(player.x + player.px[i]) > HALF + 0.15) over++;
+    if (over > 0) {
+      fallAcc += over * dt * 4;
+      if (fallAcc >= 1) {
+        const k = Math.floor(fallAcc); fallAcc -= k; lose(k);
+        burst(player.x + Math.sign(player.x) * hw, 0.5, player.z + depth / 2, Math.min(k, 4), pBody.material);
+        if (!gate_fall) { popup('упали!', true); gate_fall = 1.2; }
+      }
+    } else fallAcc = 0;
+    gate_fall = Math.max(0, gate_fall - dt);
   }
 
   // shooting
@@ -1003,7 +1082,7 @@ function render(dt) {
         eBody.setMatrixAt(k, dummy.matrix); eHead.setMatrixAt(k, dummy.matrix); k++;
       }
       const [sx, sy, ok] = toScreen(h.x, 1.4, front);
-      h.tag.hidden = !ok; h.tag.textContent = h.count;
+      h.tag.hidden = !ok || state === 'menu'; h.tag.textContent = h.count;
       h.tag.style.transform = `translate(${sx}px,${sy}px) translate(-50%,-100%)`;
     } else h.tag.hidden = true;
   }
@@ -1041,7 +1120,7 @@ function render(dt) {
   playerTag.style.transform = `translate(${px}px,${py}px) translate(-50%,-100%) scale(${1 + tagPulse * 0.25})`;
   if (boss && boss.grp.visible && boss.z > player.z - 90) {
     const [bx, by, bok] = toScreen(boss.x, 7.2, boss.z);
-    bossTag.hidden = !bok; bossTag.textContent = Math.max(0, Math.ceil(boss.hp));
+    bossTag.hidden = !bok || state === 'menu'; bossTag.textContent = Math.max(0, Math.ceil(boss.hp));
     bossTag.style.transform = `translate(${bx}px,${by}px) translate(-50%,-100%)`;
   } else bossTag.hidden = true;
   if (player.hero > 0) $('heroChip').textContent = 'Мех ♥' + Math.ceil(player.hero);
