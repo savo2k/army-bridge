@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Армия на мосту</title>
+<title>Та самая игра</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap" rel="stylesheet">
 <style>
@@ -69,7 +69,7 @@
 
 <div class="overlay" id="menu">
   <div class="panel">
-    <h1>Армия<br>на мосту</h1>
+    <h1>Та самая<br>игра</h1>
     <div class="group"><div class="glabel">Сложность</div><div class="seg" id="optDiff"></div></div>
     <div class="group"><div class="glabel">Окружение</div><div class="seg" id="optEnv"></div></div>
     <div class="group"><div class="glabel">Враги</div><div class="seg" id="optFoe"></div></div>
@@ -156,7 +156,7 @@ function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcT
 // ---------- settings ----------
 const DIFFS = {
   easy:   { name: 'Лёгкая',  sub: 'разминка',      hp: 0.6, foes: 0.6, boss: 0.6, hit: 0.6, start: 10 },
-  normal: { name: 'Средняя', sub: 'как в рекламе', hp: 1,   foes: 1,   boss: 1,   hit: 1,   start: 0 },
+  normal: { name: 'Средняя', sub: 'честный бой', hp: 1,   foes: 1,   boss: 1,   hit: 1,   start: 0 },
   hard:   { name: 'Хардкор', sub: 'без пощады',    hp: 1.5, foes: 1.5, boss: 1.6, hit: 1.4, start: -4 },
 };
 const ENVS = {
@@ -166,7 +166,7 @@ const ENVS = {
   volcano:{ name: 'Вулкан',  sky: ['#1a1020', '#3a1a2a', '#7a2e20', '#c2502a'], fog: 0x5a2a22, mount: [0x2c2226, 0x46302c], ground: 0x8a2a12, stone: [120, 106, 102], rail: 0x4a3a3a, bush: 0xff6a2a, light: 0.75 , haze: 0x4a2a2e },
 };
 const FOES = {
-  army:     { name: 'Люди в красном', sub: 'со щитами', body: 0xd93434, head: 0xff6a5c, boss: 'КРАСНЫЙ МЕХ', unitHp: 1,   speed: 3, dark: false, glb: 'glb-shield', mech: 'tex-mech-red' },
+  army:     { name: 'Алый легион', sub: 'стена щитов', body: 0xd93434, head: 0xff6a5c, boss: 'ТИТАН ЛЕГИОНА', unitHp: 1,   speed: 3, dark: false, glb: 'glb-shield', mech: 'tex-mech-red' },
   zombies:  { name: 'Зомби',          sub: 'живучие',   body: 0x5f7d3a, head: 0x9ad07a, boss: 'ЗОМБИ-МЕХ',   unitHp: 1.5, speed: 2, dark: false, glb: 'glb-zombie', mech: 'tex-mech-green' },
 };
 const WEAPONS = [
@@ -439,7 +439,7 @@ const sfx = (() => {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return false;
-      ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return true;
@@ -485,20 +485,21 @@ const sfx = (() => {
     return true;
   }
   return {
+    context() { return ready() ? ctx : null; },
     unlock() { if (ready()) decodeAll(); },
     get muted() { return muted; },
     toggle() { muted = !muted; try { localStorage.setItem('armyBridgeMuted', muted ? '1' : '0'); } catch (e) {} if (!muted && ready()) decodeAll(); return muted; },
-    shot(heavy) { if (!ready() || !gate(heavy ? 'hshot' : 'shot', heavy ? 110 : 70)) return; if (play(heavy ? 'shot_heavy' : 'shot', heavy ? 0.5 : 0.35, 0.12)) return; noise(heavy ? 0.09 : 0.05, { vol: heavy ? 0.12 : 0.06, hp: heavy ? 300 : 1800 }); if (heavy) tone(110, 0.08, { type: 'square', vol: 0.05, slide: 0.5 }); },
-    pickup() { if (!ready() || !gate('pick', 45)) return; if (play('pickup', 0.6, 0.15)) return; tone(880 + Math.random() * 180, 0.07, { type: 'triangle', vol: 0.12, slide: 1.5 }); },
-    hit() { if (!ready() || !gate('hit', 70)) return; if (play('hit', 0.35, 0.15)) return; noise(0.04, { vol: 0.07, hp: 400, lp: 2500 }); },
-    melee() { if (!ready() || !gate('melee', 80)) return; if (play('melee', 0.45, 0.15)) return; noise(0.06, { vol: 0.1, hp: 200, lp: 1800 }); tone(160, 0.06, { type: 'square', vol: 0.04, slide: 0.6 }); },
+    shot(heavy) { if (!ready() || !gate(heavy ? 'hshot' : 'shot', heavy ? 110 : 70)) return; if (play(heavy ? 'shot_heavy' : 'shot', heavy ? 0.75 : 0.55, 0.12)) return; noise(heavy ? 0.09 : 0.05, { vol: heavy ? 0.12 : 0.06, hp: heavy ? 300 : 1800 }); if (heavy) tone(110, 0.08, { type: 'square', vol: 0.05, slide: 0.5 }); },
+    pickup() { if (!ready() || !gate('pick', 45)) return; if (play('pickup', 1, 0.15)) return; tone(880 + Math.random() * 180, 0.07, { type: 'triangle', vol: 0.12, slide: 1.5 }); },
+    hit() { if (!ready() || !gate('hit', 70)) return; if (play('hit', 0.7, 0.15)) return; noise(0.04, { vol: 0.07, hp: 400, lp: 2500 }); },
+    melee() { if (!ready() || !gate('melee', 80)) return; if (play('melee', 0.8, 0.15)) return; noise(0.06, { vol: 0.1, hp: 200, lp: 1800 }); tone(160, 0.06, { type: 'square', vol: 0.04, slide: 0.6 }); },
     gate(good) {
       if (!ready()) return;
       if (play(good ? 'gate_good' : 'gate_bad', 0.8, 0)) return;
       const notes = good ? [523, 659, 784, 1046] : [392, 330, 262, 196];
       notes.forEach((f, i) => tone(f, 0.14, { type: good ? 'triangle' : 'sawtooth', vol: good ? 0.16 : 0.08, delay: i * 0.06 }));
     },
-    coin() { if (!ready() || !gate('coin', 60)) return; if (play('coin', 0.7, 0.05)) return; tone(988, 0.08, { type: 'square', vol: 0.07 }); tone(1319, 0.18, { type: 'square', vol: 0.07, delay: 0.07 }); },
+    coin() { if (!ready() || !gate('coin', 60)) return; if (play('coin', 1, 0.05)) return; tone(988, 0.08, { type: 'square', vol: 0.07 }); tone(1319, 0.18, { type: 'square', vol: 0.07, delay: 0.07 }); },
     reward() { if (!ready()) return; if (play('card_break', 0.9, 0.05)) return; noise(0.18, { vol: 0.2, hp: 150, lp: 3000 }); [659, 784, 988, 1319].forEach((f, i) => tone(f, 0.16, { type: 'square', vol: 0.07, delay: 0.05 + i * 0.07 })); },
     crash() { if (!ready()) return; if (play('crash', 0.9, 0.05)) return; noise(0.25, { vol: 0.3, hp: 60, lp: 1200 }); tone(90, 0.25, { vol: 0.3, slide: 0.4 }); },
     boom() { if (!ready()) return; if (play('boom', 1, 0.05)) return; tone(120, 0.45, { vol: 0.5, slide: 0.3 }); noise(0.35, { vol: 0.25, hp: 40, lp: 900 }); },
@@ -520,17 +521,37 @@ const music = (() => {
     el.preservesPitch = el.mozPreservesPitch = el.webkitPreservesPitch = false;
     return el;
   }
-  let rate = 0.8, vol = 0;
+  let gain = null, vol = -1, pendingRate = 0, dip = 0;
+  function route() {
+    // iOS ignores audio.volume, so loudness goes through a WebAudio gain node
+    if (gain) return;
+    const ctx = sfx.context();
+    if (!ctx) return;
+    try {
+      const node = ctx.createMediaElementSource(el);
+      gain = ctx.createGain(); gain.gain.value = 0;
+      node.connect(gain); gain.connect(ctx.destination);
+      el.volume = 1;
+    } catch (e) { gain = null; }
+  }
+  function setVol(v) {
+    if (gain) gain.gain.setTargetAtTime(v, gain.context.currentTime, 0.08);
+    else el.volume = Math.max(0, Math.min(1, v));
+  }
   return {
-    start() { if (sfx.muted || !ensure()) return; el.play().catch(() => {}); },
+    start() { if (sfx.muted || !ensure()) return; route(); el.playbackRate = 0.8; el.play().catch(() => {}); },
     stop() { if (el) el.pause(); },
-    // called every frame: glide tempo and volume toward the current screen's mood
+    // called every frame; a tempo change happens under a short fade (gliding playbackRate crackles on phones)
     tick(dt, mode) {
       if (!el || el.paused) return;
-      const wantRate = mode === 'run' ? 1 : 0.8, wantVol = mode === 'run' ? 0.45 : mode === 'menu' ? 0.35 : 0.18;
-      rate += (wantRate - rate) * Math.min(1, dt * 1.5); vol += (wantVol - vol) * Math.min(1, dt * 2);
-      if (Math.abs(el.playbackRate - rate) > 0.01) el.playbackRate = rate;
-      el.volume = Math.max(0, Math.min(1, vol));
+      const wantRate = mode === 'run' ? 1 : 0.8, wantVol = mode === 'run' ? 0.28 : mode === 'menu' ? 0.22 : 0.1;
+      if (!dip && Math.abs(el.playbackRate - wantRate) > 0.001) { dip = 0.25; pendingRate = wantRate; setVol(0); vol = 0; }
+      if (dip) {
+        dip = Math.max(0, dip - dt);
+        if (!dip) { el.playbackRate = pendingRate; vol = -1; }
+        return;
+      }
+      if (vol !== wantVol) { vol = wantVol; setVol(wantVol); }
     },
   };
 })();
@@ -1008,8 +1029,8 @@ function render(dt) {
   const pullTo = heroIntro > 0 ? 1 : player.hero > 0 ? 0.3 : 0;
   camPull += (pullTo - camPull) * Math.min(1, dt * 2.5);
   // the camera sits far enough back that a mech 12 rows deep in the column stays on screen
-  camera.position.set(player.x * 0.5 + sx, 10.5 + 5 * camPull + sy, player.z + 15 + 7 * camPull);
-  camera.lookAt(player.x * 0.3, 0, player.z - 7 + 3 * camPull);
+  camera.position.set(player.x * 0.5 + sx, 8.5 + 5 * camPull + sy, player.z + 12.5 + 7 * camPull);
+  camera.lookAt(player.x * 0.3, 0, player.z - 6 + 3 * camPull);
   scenery.position.z = player.z * 0.6;
   renderer.render(scene, camera);
 
